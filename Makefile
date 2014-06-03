@@ -1,8 +1,10 @@
 CXX=g++
+LLVM_CONFIG=llvm-config
+
+CXXFLAGS=-g -Wall `${LLVM_CONFIG} --cxxflags` 
+LDFLAGS=`${LLVM_CONFIG} --ldflags` `${LLVM_CONFIG} --libs` -lpthread -ldl -lncurses
 
 OBJS=vm 
-#CXXFLAGS=-g -Wall `llvm-config --cxxflags --ldflags --libs` -lpthread -ldl
-CXXFLAGS=-g -Wall `llvm-config --cxxflags --libs` `llvm-config --ldflags`
 
 .SUFFIXES: .cpp .o
 
@@ -10,7 +12,7 @@ CXXFLAGS=-g -Wall `llvm-config --cxxflags --libs` `llvm-config --ldflags`
 	$(CXX) -c $< -o $@ $(CXXFLAGS)
 
 vm: vm.o
-	$(CXX) -o $@ $< $(CXXFLAGS) 
+	$(CXX) -o $@ $< $(LDFLAGS) 
 
 clean: 
 	rm -f $(OBJS) *.o

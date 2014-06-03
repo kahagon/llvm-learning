@@ -1,16 +1,15 @@
 #include <iostream>
-#include "llvm/Assembly/PrintModulePass.h"
-#include "llvm/LLVMContext.h"
-#include "llvm/Module.h"
+#include "llvm/IR/Module.h"
 #include "llvm/PassManager.h"
 #include "llvm/LinkAllPasses.h"
+#include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/FormattedStream.h"
 #include "llvm/Support/PrettyStackTrace.h"
 #include "llvm/Support/Signals.h"
 #include "llvm/Support/TargetSelect.h"
-#include "llvm/IRBuilder.h"
-#include "llvm/ValueSymbolTable.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/ValueSymbolTable.h"
 #include "llvm/Support/raw_ostream.h"
 
 llvm::Function *generate_function_main(llvm::IRBuilder<>* builder, llvm::Module *mod) {
@@ -61,10 +60,11 @@ llvm::Function *generate_function_main(llvm::IRBuilder<>* builder, llvm::Module 
 void print_module(llvm::Module* mod, std::string file_name) {
 	llvm::PassManager pass_manager;
 	std::string error;
-	llvm::raw_fd_ostream raw_stream(file_name.c_str(), error);
+    //llvm::sys::fs::OpenFlags flags = llvm::sys::fs::OpenFlags::F_RW;
+	llvm::raw_fd_ostream raw_stream(file_name.c_str(), error, llvm::sys::fs::F_RW);
 
 	pass_manager.add(llvm::createPromoteMemoryToRegisterPass());
-	pass_manager.add(llvm::createPrintModulePass(&raw_stream));
+	pass_manager.add(llvm::createPrintModulePass(raw_stream));
 	pass_manager.run(*mod);
 	raw_stream.close();
 }
