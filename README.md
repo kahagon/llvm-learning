@@ -1,6 +1,6 @@
 ### build 
 ```
-cmake . && make
+[CMAKE_PREFIX_PATH=/path/to/root/of/llvm] cmake . && make
 ```
 
 ### test
