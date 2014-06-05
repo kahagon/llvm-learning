@@ -12,59 +12,69 @@
 #include "llvm/IR/ValueSymbolTable.h"
 #include "llvm/Support/raw_ostream.h"
 
-llvm::Function *generate_function_main(llvm::IRBuilder<>* builder, llvm::Module *mod) {
-	std::vector<llvm::Type*> param_types(0, 
-		llvm::Type::getVoidTy(llvm::getGlobalContext()));
-	llvm::Type* result_type = llvm::Type::getInt32Ty(llvm::getGlobalContext());
-	std::string function_name = "main";
-	llvm::FunctionType* function_type 
-		= llvm::FunctionType::get(result_type, param_types, false);
-	llvm::Function* function = llvm::Function::Create(
-		function_type,
-		llvm::Function::ExternalLinkage,
-		function_name,
-		mod);
+using namespace llvm;
 
-	llvm::BasicBlock *basic_block = llvm::BasicBlock::Create(
-		llvm::getGlobalContext(), 
-		"entry", 
-		function);
-
+Function* append_test_block_return_int(
+  LLVMContext& ctx,
+  IRBuilder<>* builder, 
+  Module* mod, 
+  Function* func) 
+{
+	BasicBlock *basic_block = BasicBlock::Create(ctx, "ret_int", func);
 	builder->SetInsertPoint(basic_block);
+
 	// TODO: generate function body
 	int var_int_value = 34;
 	std::string var_name = "i";
-	llvm::Value* var;
-	llvm::AllocaInst* alloca = builder->CreateAlloca(
-		llvm::Type::getInt32Ty(llvm::getGlobalContext()),
-		0,
-		var_name);
-	var = alloca;
-	llvm::ValueSymbolTable& function_value_symbol_table 
-		= function->getValueSymbolTable();
+  Value* var = builder->CreateAlloca(
+		Type::getInt32Ty(ctx),	0, var_name);
+	ValueSymbolTable& function_value_symbol_table 
+		= func->getValueSymbolTable();
 
-	llvm::Value* lhs_v;
-	llvm::Value* rhs_v;
+	Value* lhs_v;
+	Value* rhs_v;
 
 	// 'lhs_v' is equal to 'var'
-        lhs_v = function_value_symbol_table.lookup(var_name);
-	rhs_v = llvm::ConstantInt::get(
-			llvm::Type::getInt32Ty(llvm::getGlobalContext()), var_int_value);
+  lhs_v = function_value_symbol_table.lookup(var_name);
+	rhs_v = ConstantInt::get(
+			Type::getInt32Ty(ctx), var_int_value);
 	builder->CreateStore(rhs_v, lhs_v);
 
 	// return i
 	builder->CreateRet(builder->CreateLoad(lhs_v, "var_tmp"));
-	return function;
+	return func;
 }
 
-void print_module(llvm::Module* mod, std::string file_name) {
-	llvm::PassManager pass_manager;
-	std::string error;
-    //llvm::sys::fs::OpenFlags flags = llvm::sys::fs::OpenFlags::F_RW;
-	llvm::raw_fd_ostream raw_stream(file_name.c_str(), error, llvm::sys::fs::F_RW);
+Function* append_test_block_print_string(
+  LLVMContext& ctx,
+  IRBuilder<>* builder,
+  Module* mod,
+  Function* func) 
+{
+  BasicBlock *block = BasicBlock::Create(ctx, "print_string", func);
+  builder->SetInsertPoint(block);
+}
 
-	pass_manager.add(llvm::createPromoteMemoryToRegisterPass());
-	pass_manager.add(llvm::createPrintModulePass(raw_stream));
+Function *generate_function_main(LLVMContext& ctx, IRBuilder<>* builder, Module *mod) {
+	std::vector<Type*> param_types(0, Type::getVoidTy(ctx));
+	Type* result_type = Type::getInt32Ty(ctx);
+	std::string func_name = "main";
+	FunctionType* func_type 
+		= FunctionType::get(result_type, param_types, false);
+	Function* func = Function::Create(
+		func_type, Function::ExternalLinkage,	func_name, mod);
+
+	return func;
+}
+
+void print_module(Module* mod, std::string file_name) {
+	PassManager pass_manager;
+	std::string error;
+  //sys::fs::OpenFlags flags = sys::fs::OpenFlags::F_RW;
+	raw_fd_ostream raw_stream(file_name.c_str(), error, sys::fs::F_RW);
+
+	pass_manager.add(createPromoteMemoryToRegisterPass());
+	pass_manager.add(createPrintModulePass(raw_stream));
 	pass_manager.run(*mod);
 	raw_stream.close();
 }
@@ -77,10 +87,11 @@ void print_module(llvm::Module* mod, std::string file_name) {
  */
 int main(int argc, char *argv[]) {
 	std::string file_name = "main.ll";
-	llvm::IRBuilder<> *builder 
-		= new llvm::IRBuilder<>(llvm::getGlobalContext());
-	llvm::Module *mod = new llvm::Module("null", llvm::getGlobalContext());
-	generate_function_main(builder, mod);
+  LLVMContext& ctx = getGlobalContext();
+	IRBuilder<> *builder = new IRBuilder<>(ctx);
+	Module *mod = new Module("null", ctx);
+	Function* func = generate_function_main(ctx, builder, mod);
+  append_test_block_return_int(ctx, builder, mod, func);
 	print_module(mod, file_name);
 
 	return 0;
