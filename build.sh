@@ -10,13 +10,3 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-./vm
-~/local/llvm/bin/lli main.ll
-
-if [ $? -eq 34 ]; then 
-  echo "main.ll succeded"; 
-  exit 0
-else 
-  echo "main.ll failed"; 
-  exit 1
-fi
